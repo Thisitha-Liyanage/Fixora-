@@ -8,12 +8,16 @@ import {
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    ActivityIndicator
-} from "react-native";
+    ActivityIndicator,
+    Image,
+} from "react-native";;
 import { Link } from "expo-router";
-import { Ionicons } from "@expo/vector-icons"; 
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { loginUser } from "../Service/AuthService";
 
 export default function LoginScreen() {
+    const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
@@ -48,11 +52,39 @@ export default function LoginScreen() {
         if (valid) {
             try {
                 setLoading(true);
-                console.log("Login Success");
-                // Your Firebase logic goes here:
-                // await signInWithEmailAndPassword(auth, email.trim(), password);
-            } catch (error) {
-                console.error(error);
+
+                await loginUser(
+                    email.trim(),
+                    password
+                );
+
+                alert("Login successful!");
+
+                router.replace("/Screen/HomePage");
+
+            } catch (error: any) {
+
+                switch (error.code) {
+                    case "auth/invalid-credential":
+                        alert("Invalid email or password.");
+                        break;
+
+                    case "auth/user-not-found":
+                        alert("User not found.");
+                        break;
+
+                    case "auth/wrong-password":
+                        alert("Incorrect password.");
+                        break;
+
+                    case "auth/invalid-email":
+                        alert("Invalid email.");
+                        break;
+
+                    default:
+                        alert(error.message);
+                }
+
             } finally {
                 setLoading(false);
             }
@@ -61,27 +93,31 @@ export default function LoginScreen() {
 
     return (
         <SafeAreaView className="flex-1 bg-white">
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 className="flex-1"
             >
-                <ScrollView 
+                <ScrollView
                     contentContainerStyle={{ flexGrow: 1, justifyContent: "center" }}
                     className="px-8"
                     showsVerticalScrollIndicator={false}
                 >
                     {/* Logo */}
                     <View className="items-center mb-12">
-                        <View className="w-28 h-28 rounded-full bg-slate-200 items-center justify-center">
-                            <Text className="text-slate-500 text-base font-semibold">LOGO</Text>
+                        <View className="w-28 h-28 rounded-full bg-white items-center justify-center overflow-hidden">
+                            <Image
+                                source={require("../../assets/images/Invento_Logo.png")}
+                                className="w-full h-full"
+                                resizeMode="contain"
+                            />
                         </View>
 
                         <Text className="text-4xl font-extrabold text-[#0F172A] mt-6">
-                            Fixora
+                            Invento
                         </Text>
 
                         <Text className="text-gray-500 mt-2 text-center px-4">
-                            Book trusted home service professionals
+                            Manage Your Stock Easily
                         </Text>
                     </View>
 
@@ -101,9 +137,8 @@ export default function LoginScreen() {
                                 setEmail(text);
                                 if (emailError) setEmailError("");
                             }}
-                            className={`rounded-xl border px-4 py-4 text-base ${
-                                emailError ? "border-red-500 bg-red-50/10" : "border-gray-300"
-                            }`}
+                            className={`rounded-xl border px-4 py-4 text-base ${emailError ? "border-red-500 bg-red-50/10" : "border-gray-300"
+                                }`}
                         />
                         {emailError && (
                             <Text className="text-red-500 text-sm mt-1.5 ml-1">
@@ -129,18 +164,17 @@ export default function LoginScreen() {
                                     setPassword(text);
                                     if (passwordError) setPasswordError("");
                                 }}
-                                className={`rounded-xl border pl-4 pr-12 py-4 text-base ${
-                                    passwordError ? "border-red-500 bg-red-50/10" : "border-gray-300"
-                                }`}
+                                className={`rounded-xl border pl-4 pr-12 py-4 text-base ${passwordError ? "border-red-500 bg-red-50/10" : "border-gray-300"
+                                    }`}
                             />
-                            <TouchableOpacity 
+                            <TouchableOpacity
                                 onPress={() => setSecureText(!secureText)}
                                 className="absolute right-4 p-1"
                             >
-                                <Ionicons 
-                                    name={secureText ? "eye-off-outline" : "eye-outline"} 
-                                    size={20} 
-                                    color="#64748B" 
+                                <Ionicons
+                                    name={secureText ? "eye-off-outline" : "eye-outline"}
+                                    size={20}
+                                    color="#64748B"
                                 />
                             </TouchableOpacity>
                         </View>
@@ -156,9 +190,8 @@ export default function LoginScreen() {
                     <TouchableOpacity
                         onPress={validate}
                         disabled={loading}
-                        className={`rounded-xl py-4 mt-8 items-center justify-center flex-row ${
-                            loading ? "bg-slate-400" : "bg-[#0F172A]"
-                        }`}
+                        className={`rounded-xl py-4 mt-8 items-center justify-center flex-row ${loading ? "bg-slate-400" : "bg-[#0F172A]"
+                            }`}
                     >
                         {loading ? (
                             <ActivityIndicator color="#fff" size="small" />
