@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Fixora",
-    "slug": "Fixora",
+    "name": "Invento",
+    "slug": "Invento",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fixora",
+    "scheme": "invento",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -20,7 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.thisithadinujaya.Fixora"
+      "package": "com.thisithadinujaya.Invento"
     },
     "web": {
       "output": "static",
@@ -48,6 +48,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "14ac5671-352c-43ab-b3eb-00baeee2734d"
+      }
     }
   }
 }
