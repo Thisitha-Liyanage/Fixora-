@@ -13,9 +13,13 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Navbar from "../(Components)/NavBar";
 import ItemService, { Item } from "../Service/ItemService";
+import { useAuth } from "../Context/AuthContext";
 
 
 export default function ItemsScreen() {
+
+    const { user, loading } = useAuth();
+
     const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
     const [isUpdateMode, setIsUpdateMode] = useState(false);
@@ -53,7 +57,13 @@ export default function ItemsScreen() {
 
     const loadItems = async () => {
 
-        const data = await ItemService.getAllItems();
+        if (!user) {
+            console.log("No logged user");
+            return;
+        }
+
+
+        const data = await ItemService.getAllItems(user.uid);
 
         setItems(data);
 
@@ -63,9 +73,13 @@ export default function ItemsScreen() {
 
     useEffect(() => {
 
-        loadItems();
+        if (user) {
 
-    }, []);
+            loadItems();
+
+        }
+
+    }, [user]);
 
 
 
@@ -133,14 +147,35 @@ export default function ItemsScreen() {
 
 
 
-        await ItemService.addItem({
+        if (!user) {
+            return;
+        }
 
-            itemId: id,
-            name: name,
-            quantity: Number(quantity),
-            expiry: expiry
 
-        });
+        const result = await ItemService.addItem(
+            {
+                itemId: id,
+                name,
+                quantity: Number(quantity),
+                expiry
+            },
+            user.uid
+        );
+
+
+        console.log("Add Item Result:", result);
+
+
+        if (!result.success) {
+
+            Alert.alert(
+                "Error",
+                "Failed to add item"
+            );
+
+            return;
+
+        }
 
 
 
@@ -183,6 +218,11 @@ export default function ItemsScreen() {
 
 
     const updateItem = async () => {
+
+        if (!user) {
+            Alert.alert("Error", "User not logged in");
+            return;
+        }
 
         let newErrors = {
             id: "",
@@ -234,9 +274,9 @@ export default function ItemsScreen() {
                 name,
                 quantity: Number(quantity),
                 expiry
-            }
+            },
+            user.uid
         );
-
 
         setShowModal(false);
 
@@ -265,6 +305,10 @@ export default function ItemsScreen() {
 
     const deleteItem = (id: string) => {
 
+        if (!user) {
+            Alert.alert("Error", "User not logged in");
+            return;
+        }
 
         Alert.alert(
             "Delete Item",
@@ -274,25 +318,30 @@ export default function ItemsScreen() {
                     text: "No",
                     style: "cancel"
                 },
-
                 {
                     text: "Yes",
                     style: "destructive",
 
                     onPress: async () => {
 
+                        const result = await ItemService.deleteItem(
+                            id,
+                            user.uid
+                        );
 
-                        await ItemService.deleteItem(id);
-
-
-                        loadItems();
-
+                        if (result.success) {
+                            loadItems();
+                        } else {
+                            Alert.alert(
+                                "Error",
+                                "Failed to delete item"
+                            );
+                        }
 
                     }
                 }
             ]
         );
-
 
     };
 

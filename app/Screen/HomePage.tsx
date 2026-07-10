@@ -1,35 +1,99 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Navbar from "../(Components)/NavBar";
+import ItemService, { Item } from "../Service/ItemService";
+import { useAuth } from "../Context/AuthContext";
+import { signOut } from "firebase/auth";
+import { auth } from "../../Firebase/Firebase";
+import { router } from "expo-router";
 
 export default function HomeScreen() {
+    const { user } = useAuth();
+    const [items, setItems] = useState<Item[]>([]);
+
+    useEffect(() => {
+        loadItems();
+    }, [user]);
+
+    const loadItems = async () => {
+        if (!user) return;
+        const data = await ItemService.getAllItems(user.uid);
+        setItems(data);
+    };
+
+    const totalItems = items.length;
+
+    const lowStock = items.filter(
+        item => item.quantity < 20 && item.quantity > 0
+    ).length;
+
+    const outOfStock = items.filter(
+        item => item.quantity <= 0
+    ).length;
+
+    const recentlyUpdated = [...items].reverse().slice(0, 5);
+
+    const logout = () => {
+        Alert.alert(
+            "Logout",
+            "Are you sure you want to logout?",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                {
+                    text: "Logout",
+                    onPress: async () => {
+                        await signOut(auth);
+                        router.replace("/Screen/login");
+                    }
+                }
+            ]
+        );
+    };
+
     return (
         <View className="flex-1 bg-slate-100">
 
-            {/* Header */}
             <View className="bg-slate-900 px-6 pt-16 pb-8 rounded-b-[30px]">
 
-                <Text className="text-white text-3xl font-bold">
-                    Invento
-                </Text>
+                <View className="flex-row justify-between items-center">
 
-                <Text className="text-slate-300 mt-2 text-base">
-                    Welcome back 👋
-                </Text>
+                    <View>
+                        <Text className="text-white text-3xl font-bold">
+                            Invento
+                        </Text>
+
+                        <Text className="text-slate-300 mt-2">
+                            Welcome {user?.email}
+                        </Text>
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={logout}
+                        className="bg-red-600 p-3 rounded-xl"
+                    >
+                        <Ionicons
+                            name="log-out-outline"
+                            size={24}
+                            color="white"
+                        />
+                    </TouchableOpacity>
+
+                </View>
 
             </View>
-
 
             <ScrollView
                 className="flex-1 px-5"
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{
-                    paddingBottom: 140
+                    paddingBottom:140
                 }}
             >
 
-                {/* Summary Cards */}
                 <View className="flex-row justify-between mt-6">
 
                     <View className="bg-white rounded-2xl p-5 w-[48%] shadow">
@@ -45,11 +109,10 @@ export default function HomeScreen() {
                         </Text>
 
                         <Text className="text-3xl font-bold text-slate-900 mt-1">
-                            245
+                            {totalItems}
                         </Text>
 
                     </View>
-
 
                     <View className="bg-white rounded-2xl p-5 w-[48%] shadow">
 
@@ -64,37 +127,18 @@ export default function HomeScreen() {
                         </Text>
 
                         <Text className="text-3xl font-bold text-red-600 mt-1">
-                            12
+                            {lowStock}
                         </Text>
 
                     </View>
 
                 </View>
 
-
-                {/* Statistics */}
-
                 <Text className="text-xl font-bold text-slate-900 mt-8 mb-4">
                     Inventory Overview
                 </Text>
 
-
                 <View className="bg-white rounded-2xl p-5 shadow">
-
-
-                    <View className="flex-row justify-between py-3 border-b border-slate-200">
-
-                        <Text className="text-slate-600">
-                            Categories
-                        </Text>
-
-                        <Text className="font-bold text-slate-900">
-                            8
-                        </Text>
-
-                    </View>
-
-
 
                     <View className="flex-row justify-between py-3 border-b border-slate-200">
 
@@ -103,94 +147,128 @@ export default function HomeScreen() {
                         </Text>
 
                         <Text className="font-bold text-red-600">
-                            3
+                            {outOfStock}
                         </Text>
 
                     </View>
-
-
 
                     <View className="flex-row justify-between py-3">
 
                         <Text className="text-slate-600">
-                            Recently Added
+                            Recently Updated
                         </Text>
 
                         <Text className="font-bold text-green-600">
-                            15
+                            {recentlyUpdated.length}
                         </Text>
 
                     </View>
 
-
                 </View>
 
+                <Text className="text-xl font-bold text-slate-900 mt-8 mb-4">
+                    Recently Updated
+                </Text>
 
+                {
+                    recentlyUpdated.length === 0 ? (
 
-                {/* Low Stock Alerts */}
+                        <Text className="text-slate-500">
+                            No items available
+                        </Text>
+
+                    ) : (
+
+                        recentlyUpdated.map(item => (
+
+                            <View
+                                key={item.id}
+                                className="bg-white rounded-2xl p-5 mb-4 shadow"
+                            >
+
+                                <View className="flex-row justify-between">
+
+                                    <View>
+
+                                        <Text className="text-lg font-bold text-slate-900">
+                                            {item.name}
+                                        </Text>
+
+                                        <Text className="text-slate-500 mt-1">
+                                            ID: {item.itemId}
+                                        </Text>
+
+                                    </View>
+
+                                    <Text className="font-bold text-slate-900">
+                                        Qty: {item.quantity}
+                                    </Text>
+
+                                </View>
+
+                                <Text className="text-slate-500 mt-2">
+                                    Expiry: {item.expiry}
+                                </Text>
+
+                            </View>
+
+                        ))
+
+                    )
+                }
 
                 <Text className="text-xl font-bold text-slate-900 mt-8 mb-4">
                     Low Stock Alerts
                 </Text>
 
+                {
+                    items.filter(item => item.quantity < 20).length === 0 ? (
 
+                        <Text className="text-slate-500">
+                            No low stock items
+                        </Text>
 
-                <View className="bg-white rounded-2xl p-5 shadow">
+                    ) : (
 
-                    <View className="flex-row items-center">
+                        items.filter(item => item.quantity < 20).map(item => (
 
-                        <Ionicons
-                            name="alert-circle"
-                            size={24}
-                            color="#F59E0B"
-                        />
+                            <View
+                                key={item.id}
+                                className="bg-white rounded-2xl p-5 mb-4 shadow"
+                            >
 
+                                <View className="flex-row items-center">
 
-                        <View className="ml-3 flex-1">
+                                    <Ionicons
+                                        name="alert-circle"
+                                        size={28}
+                                        color="#F59E0B"
+                                    />
 
-                            <Text className="font-bold text-slate-900">
-                                Printer Paper
-                            </Text>
+                                    <View className="ml-3">
 
+                                        <Text className="font-bold text-slate-900">
+                                            {item.name}
+                                        </Text>
 
-                            <Text className="text-slate-500">
-                                Only 4 items remaining
-                            </Text>
+                                        <Text className="text-slate-500">
+                                            Only {item.quantity} remaining
+                                        </Text>
 
+                                    </View>
 
-                        </View>
+                                </View>
 
+                            </View>
 
-                    </View>
+                        ))
 
-
-                </View>
-
+                    )
+                }
 
             </ScrollView>
 
-
-
-            {/* Floating Add Button */}
-
-            <TouchableOpacity
-                className="absolute bottom-24 right-6 bg-slate-900 w-16 h-16 rounded-full items-center justify-center shadow-lg"
-            >
-
-                <Ionicons
-                    name="add"
-                    size={32}
-                    color="white"
-                />
-
-            </TouchableOpacity>
-
-
-
-
-
             <Navbar />
-
 
         </View>
     );
